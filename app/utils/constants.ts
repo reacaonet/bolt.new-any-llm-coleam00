@@ -46,6 +46,7 @@ const staticModels: ModelInfo[] = [
   { name: 'pixtral-12b-2409', label: 'Pixtral 12B', provider: 'Mistral' },
   { name: 'llama3.1-8b', label: 'Llama 3.1 8B', provider: 'Cerebras' },
   { name: 'llama3.1-70b', label: 'Llama 3.1 70B', provider: 'Cerebras' },
+  { name: 'anthropic.claude-3-5-sonnet-20241022-v2:0', label: 'Sonnet 3.5 v2 Bedrock', provider: 'Bedrock' },
 ];
 
 export let MODEL_LIST: ModelInfo[] = [...staticModels];

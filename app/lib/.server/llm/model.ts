@@ -8,6 +8,11 @@ import { ollama } from 'ollama-ai-provider';
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { mistral } from '@ai-sdk/mistral';
 import { createMistral } from '@ai-sdk/mistral';
+import { bedrock } from '@ai-sdk/amazon-bedrock';
+import { createAmazonBedrock } from '@ai-sdk/amazon-bedrock';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 export function getAnthropicModel(apiKey: string, model: string) {
   const anthropic = createAnthropic({
@@ -46,6 +51,16 @@ export function getGoogleModel(apiKey: string, model: string) {
   );
 
   return google(model);
+}
+
+export function getAmazonBedrockModel(apiKey: string, model: string) {
+  const amazonBedrock = createAmazonBedrock({
+    region: process.env.AWS_REGION,
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  });
+
+  return amazonBedrock(model);
 }
 
 export function getGroqModel(apiKey: string, model: string) {
@@ -112,6 +127,8 @@ export function getModel(provider: string, model: string, env: Env) {
       return  getMistralModel(apiKey, model);
     case 'Cerebras':
       return getCerebrasModel(apiKey, model);
+    case 'Bedrock':
+      return getAmazonBedrockModel(apiKey, model);
     default:
       return getOllamaModel(baseURL, model);
   }

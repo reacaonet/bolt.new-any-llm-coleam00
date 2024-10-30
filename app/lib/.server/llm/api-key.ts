@@ -27,6 +27,8 @@ export function getAPIKey(cloudflareEnv: Env, provider: string) {
       return env.OPENAI_LIKE_API_KEY || cloudflareEnv.OPENAI_LIKE_API_KEY;
     case "Cerebras":
       return env.CEREBRAS_API_KEY || cloudflareEnv.CEREBRAS_API_KEY;
+    case 'Bedrock':
+      return env.AMAZON_BEDROCK_API_KEY || cloudflareEnv.AMAZON_BEDROCK_API_KEY;
     default:
       return "";
   }
