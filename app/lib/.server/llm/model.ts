@@ -80,6 +80,15 @@ export function getOpenRouterModel(apiKey: string, model: string) {
   return openRouter.chat(model);
 }
 
+export function getCerebrasModel(apiKey: string, model: string) {
+  const openai = createOpenAI({
+    baseURL: 'https://api.cerebras.ai/v1',
+    apiKey,
+  });
+
+  return openai(model);
+}
+
 export function getModel(provider: string, model: string, env: Env) {
   const apiKey = getAPIKey(env, provider);
   const baseURL = getBaseURL(env, provider);
@@ -101,6 +110,8 @@ export function getModel(provider: string, model: string, env: Env) {
       return getDeepseekModel(apiKey, model)
     case 'Mistral':
       return  getMistralModel(apiKey, model);
+    case 'Cerebras':
+      return getCerebrasModel(apiKey, model);
     default:
       return getOllamaModel(baseURL, model);
   }
