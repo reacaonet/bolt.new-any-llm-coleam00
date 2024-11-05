@@ -131,24 +131,29 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
 
     input.onchange = async (e) => {
       const files = Array.from(e.target.files);
+      const randomID = Math.random().toString(36).substring(2, 15);
+      
+      // Get folder name from first file's path
+      const folderName = files[0].webkitRelativePath.split('/')[0];
+      
+      // Create one message for the entire folder
+      const newMessage = {
+        id: randomID,
+        role: 'assistant',
+        content: `Folder Added: ${folderName} <boltArtifact id="${randomID}" title="${folderName}">
+          ${files.map(file => {
+            const relativePath = file.webkitRelativePath;
+            return `<boltAction type="file" filePath="${relativePath}">
+              ${file.text()}
+            </boltAction>`;
+          }).join('\n')}
+        </boltArtifact>`,
+        createdAt: Date.now()
+      };
 
-      for (const file of files) {
-        const randomID = Math.random().toString(36).substring(2, 15);
-        const fileName = file.name;
-
-        const content = await file.text();
-
-        const newMessage = {
-          id: randomID,
-          role: 'assistant',
-          content: `File Added: ${fileName} <boltArtifact id="${randomID}" title="${fileName}">\n  <boltAction type="file" filePath="${fileName}">\n    ${content}\n  </boltAction>\n</boltArtifact>`,
-          createdAt: Date.now(),
-        };
-
-        messages.push(newMessage);
-        await storeMessageHistory(messages);
-        parseMessages(messages, false);
-      }
+      messages.push(newMessage);
+      await storeMessageHistory(messages);
+      parseMessages(messages, false);
     };
 
     input.click();
