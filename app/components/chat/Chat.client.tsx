@@ -96,6 +96,65 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
 
   const TEXTAREA_MAX_HEIGHT = chatStarted ? 400 : 200;
 
+  const addCustomFile = async () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      const randomID = Math.random().toString(36).substring(2, 15);
+      const fileName = file.name;
+
+      const content = await file.text();
+
+      const newMessage = {
+        id: randomID,
+        role: 'assistant',
+        content: `File Added: ${fileName} <boltArtifact id="${randomID}" title="${fileName}">\n  <boltAction type="file" filePath="${fileName}">\n    ${content}\n  </boltAction>\n</boltArtifact>`,
+        createdAt: Date.now(),
+      };
+
+      messages.push(newMessage);
+      await storeMessageHistory(messages);
+      parseMessages(messages, false);
+    };
+
+    input.click();
+  };
+  workbenchStore.addCustomFile = addCustomFile;
+
+  const addCustomFolder = async () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.webkitdirectory = true;
+    input.multiple = true;
+
+    input.onchange = async (e) => {
+      const files = Array.from(e.target.files);
+
+      for (const file of files) {
+        const randomID = Math.random().toString(36).substring(2, 15);
+        const fileName = file.name;
+
+        const content = await file.text();
+
+        const newMessage = {
+          id: randomID,
+          role: 'assistant',
+          content: `File Added: ${fileName} <boltArtifact id="${randomID}" title="${fileName}">\n  <boltAction type="file" filePath="${fileName}">\n    ${content}\n  </boltAction>\n</boltArtifact>`,
+          createdAt: Date.now(),
+        };
+
+        messages.push(newMessage);
+        await storeMessageHistory(messages);
+        parseMessages(messages, false);
+      }
+    };
+
+    input.click();
+  };
+  workbenchStore.addCustomFolder = addCustomFolder;
+
   useEffect(() => {
     chatStore.setKey('started', initialMessages.length > 0);
   }, []);

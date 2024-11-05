@@ -336,20 +336,20 @@ export class WorkbenchStore {
   }
 
   async pushToGitHub(repoName: string, githubUsername: string, ghToken: string) {
-    
+
     try {
       // Get the GitHub auth token from environment variables
       const githubToken = ghToken;
-      
+
       const owner = githubUsername;
-      
+
       if (!githubToken) {
         throw new Error('GitHub token is not set in environment variables');
       }
-  
+
       // Initialize Octokit with the auth token
       const octokit = new Octokit({ auth: githubToken });
-  
+
       // Check if the repository already exists before creating it
       let repo
       try {
@@ -368,13 +368,13 @@ export class WorkbenchStore {
           throw error; // Some other error occurred
         }
       }
-  
+
       // Get all files
       const files = this.files.get();
       if (!files || Object.keys(files).length === 0) {
         throw new Error('No files found to push');
       }
-  
+
       // Create blobs for each file
       const blobs = await Promise.all(
         Object.entries(files).map(async ([filePath, dirent]) => {
@@ -389,13 +389,13 @@ export class WorkbenchStore {
           }
         })
       );
-  
+
       const validBlobs = blobs.filter(Boolean); // Filter out any undefined blobs
-  
+
       if (validBlobs.length === 0) {
         throw new Error('No valid files to push');
       }
-  
+
       // Get the latest commit SHA (assuming main branch, update dynamically if needed)
       const { data: ref } = await octokit.git.getRef({
         owner: repo.owner.login,
@@ -403,7 +403,7 @@ export class WorkbenchStore {
         ref: `heads/${repo.default_branch || 'main'}`, // Handle dynamic branch
       });
       const latestCommitSha = ref.object.sha;
-  
+
       // Create a new tree
       const { data: newTree } = await octokit.git.createTree({
         owner: repo.owner.login,
@@ -416,7 +416,7 @@ export class WorkbenchStore {
           sha: blob!.sha,
         })),
       });
-  
+
       // Create a new commit
       const { data: newCommit } = await octokit.git.createCommit({
         owner: repo.owner.login,
@@ -425,7 +425,7 @@ export class WorkbenchStore {
         tree: newTree.sha,
         parents: [latestCommitSha],
       });
-  
+
       // Update the reference
       await octokit.git.updateRef({
         owner: repo.owner.login,
@@ -433,12 +433,20 @@ export class WorkbenchStore {
         ref: `heads/${repo.default_branch || 'main'}`, // Handle dynamic branch
         sha: newCommit.sha,
       });
-  
+
       alert(`Repository created and code pushed: ${repo.html_url}`);
     } catch (error) {
       console.error('Error pushing to GitHub:', error instanceof Error ? error.message : String(error));
     }
   }
+
+  addCustomFile: () => void = () => {
+    return;
+  };
+
+  addCustomFolder: () => void = () => {
+    return;
+  };
 }
 
 export const workbenchStore = new WorkbenchStore();

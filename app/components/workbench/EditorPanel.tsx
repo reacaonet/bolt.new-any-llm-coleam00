@@ -132,6 +132,24 @@ export const EditorPanel = memo(
                   <div className="i-ph:tree-structure-duotone shrink-0" />
                   Files
                 </PanelHeader>
+                <PanelHeader>
+                  <button
+                    className="bg-transparent flex gap-2 items-center text-nowrap"
+                    onClick={workbenchStore.addCustomFile}
+                  >
+                    <div className="i-ph:file-arrow-up-duotone shrink-0" />
+                    <span>Upload File</span>
+                  </button>
+                </PanelHeader>
+                <PanelHeader>
+                  <button
+                    className="bg-transparent flex gap-2 items-center text-nowrap"
+                    onClick={workbenchStore.addCustomFolder}
+                  >
+                    <div className="i-ph:folder-plus-duotone shrink-0" />
+                    <span>Upload Folder</span>
+                  </button>
+                </PanelHeader>
                 <FileTree
                   className="h-full"
                   files={files}
