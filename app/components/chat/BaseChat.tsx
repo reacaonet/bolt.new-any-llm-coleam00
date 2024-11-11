@@ -26,7 +26,7 @@ const EXAMPLE_PROMPTS = [
 
 const providerList = [...new Set(MODEL_LIST.map((model) => model.provider))]
 
-const ModelSelector = ({ model, setModel, modelList, providerList, provider, setProvider }) => {
+const ModelSelector = ({ model, setModel, provider, setProvider, modelList, providerList }) => {
   return (
     <div className="mb-2 flex gap-2">
       <select 
@@ -48,6 +48,9 @@ const ModelSelector = ({ model, setModel, modelList, providerList, provider, set
         </option>
         <option key="OpenAILike" value="OpenAILike">
           OpenAILike
+        </option>
+        <option key="LMStudio" value="LMStudio">
+          LMStudio
         </option>
       </select>
       <select
@@ -80,6 +83,8 @@ interface BaseChatProps {
   input?: string;
   model: string;
   setModel: (model: string) => void;
+  provider: string;
+  setProvider: (provider: string) => void;
   handleStop?: () => void;
   sendMessage?: (event: React.UIEvent, messageInput?: string) => void;
   handleInputChange?: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
@@ -101,6 +106,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       input = '',
       model,
       setModel,
+      provider,
+      setProvider,
       sendMessage,
       handleInputChange,
       enhancePrompt,
@@ -109,7 +116,6 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     ref,
   ) => {
     const TEXTAREA_MAX_HEIGHT = chatStarted ? 400 : 200;
-    const [provider, setProvider] = useState(DEFAULT_PROVIDER);
     const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
 
     useEffect(() => {
@@ -193,9 +199,9 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                   model={model}
                   setModel={setModel}
                   modelList={MODEL_LIST}
-                  providerList={providerList}
                   provider={provider}
                   setProvider={setProvider}
+                  providerList={providerList}
                 />
                 <APIKeyManager
                   provider={provider}
