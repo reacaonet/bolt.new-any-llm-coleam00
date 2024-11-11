@@ -1,5 +1,3 @@
-// @ts-nocheck
-// Preventing TS checks with files presented in the video for a better presentation.
 import { useStore } from '@nanostores/react';
 import type { Message } from 'ai';
 import { useChat } from 'ai/react';
@@ -102,6 +100,79 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
   const { parsedMessages, parseMessages } = useMessageParser();
 
   const TEXTAREA_MAX_HEIGHT = chatStarted ? 400 : 200;
+
+  const addCustomFile = async () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+
+    input.onchange = async (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      if (!target.files?.length) return;
+
+      const file = target.files[0];
+      const randomID = Math.random().toString(36).substring(2, 15);
+      const fileName = file.name;
+
+      const content = await file.text();
+
+      const newMessage = {
+        id: randomID,
+        role: 'assistant',
+        content: `File Added: ${fileName} <boltArtifact id="${randomID}" title="${fileName}">\n  <boltAction type="file" filePath="${fileName}">\n    ${content}\n  </boltAction>\n</boltArtifact>`,
+        createdAt: new Date(),
+      } as Message;
+
+      messages.push(newMessage);
+      await storeMessageHistory(messages);
+      parseMessages(messages, false);
+    };
+
+    input.click();
+  };
+
+  const addCustomFolder = async () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.webkitdirectory = true;
+    input.multiple = true;
+
+    input.onchange = async (e: Event) => {
+      const target = e.target as HTMLInputElement;
+      if (!target.files?.length) return;
+
+      const files = Array.from(target.files);
+      const randomID = Math.random().toString(36).substring(2, 15);
+
+      const folderName = files[0].webkitRelativePath.split('/')[0];
+
+      const fileContents = await Promise.all(files.map((file) => file.text()));
+
+      const newMessage = {
+        id: randomID,
+        role: 'assistant',
+        content: `Folder Added: ${folderName} <boltArtifact id="${randomID}" title="${folderName}">
+          ${files
+            .map((file, index) => {
+              const relativePath = file.webkitRelativePath;
+              return `<boltAction type="file" filePath="${relativePath}">
+              ${fileContents[index]}
+            </boltAction>`;
+            })
+            .join('\n')}
+        </boltArtifact>`,
+        createdAt: new Date(),
+      } as Message;
+
+      messages.push(newMessage);
+      await storeMessageHistory(messages);
+      parseMessages(messages, false);
+    };
+
+    input.click();
+  };
+
+  workbenchStore.addCustomFile = addCustomFile;
+  workbenchStore.addCustomFolder = addCustomFolder;
 
   useEffect(() => {
     chatStore.setKey('started', initialMessages.length > 0);

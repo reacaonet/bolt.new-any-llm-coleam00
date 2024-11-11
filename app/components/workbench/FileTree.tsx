@@ -36,28 +36,36 @@ export const FileTree = memo(
   }: Props) => {
     renderLogger.trace('FileTree');
 
+    const [searchQuery, setSearchQuery] = useState('');
+
     const computedHiddenFiles = useMemo(() => [...DEFAULT_HIDDEN_FILES, ...(hiddenFiles ?? [])], [hiddenFiles]);
 
     const fileList = useMemo(() => {
       return buildFileList(files, rootFolder, hideRoot, computedHiddenFiles);
     }, [files, rootFolder, hideRoot, computedHiddenFiles]);
 
+    const filteredFileList = useMemo(() => {
+      return fileList.filter(fileOrFolder =>
+        fileOrFolder.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }, [fileList, searchQuery]);
+
     const [collapsedFolders, setCollapsedFolders] = useState(() => {
       return collapsed
-        ? new Set(fileList.filter((item) => item.kind === 'folder').map((item) => item.fullPath))
+        ? new Set(filteredFileList.filter((item) => item.kind === 'folder').map((item) => item.fullPath))
         : new Set<string>();
     });
 
     useEffect(() => {
       if (collapsed) {
-        setCollapsedFolders(new Set(fileList.filter((item) => item.kind === 'folder').map((item) => item.fullPath)));
+        setCollapsedFolders(new Set(filteredFileList.filter((item) => item.kind === 'folder').map((item) => item.fullPath)));
         return;
       }
 
       setCollapsedFolders((prevCollapsed) => {
         const newCollapsed = new Set<string>();
 
-        for (const folder of fileList) {
+        for (const folder of filteredFileList) {
           if (folder.kind === 'folder' && prevCollapsed.has(folder.fullPath)) {
             newCollapsed.add(folder.fullPath);
           }
@@ -65,36 +73,7 @@ export const FileTree = memo(
 
         return newCollapsed;
       });
-    }, [fileList, collapsed]);
-
-    const filteredFileList = useMemo(() => {
-      const list = [];
-
-      let lastDepth = Number.MAX_SAFE_INTEGER;
-
-      for (const fileOrFolder of fileList) {
-        const depth = fileOrFolder.depth;
-
-        // if the depth is equal we reached the end of the collaped group
-        if (lastDepth === depth) {
-          lastDepth = Number.MAX_SAFE_INTEGER;
-        }
-
-        // ignore collapsed folders
-        if (collapsedFolders.has(fileOrFolder.fullPath)) {
-          lastDepth = Math.min(lastDepth, depth);
-        }
-
-        // ignore files and folders below the last collapsed folder
-        if (lastDepth < depth) {
-          continue;
-        }
-
-        list.push(fileOrFolder);
-      }
-
-      return list;
-    }, [fileList, collapsedFolders]);
+    }, [filteredFileList, collapsed]);
 
     const toggleCollapseState = (fullPath: string) => {
       setCollapsedFolders((prevSet) => {
@@ -112,6 +91,13 @@ export const FileTree = memo(
 
     return (
       <div className={classNames('text-sm', className)}>
+        <input
+          type="text"
+          placeholder="Search files..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="mb-2 p-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent mx-auto block"
+        />
         {filteredFileList.map((fileOrFolder) => {
           switch (fileOrFolder.kind) {
             case 'file': {

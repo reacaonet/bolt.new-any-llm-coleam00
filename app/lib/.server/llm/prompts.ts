@@ -1,6 +1,49 @@
 import { MODIFICATIONS_TAG_NAME, WORK_DIR } from '~/utils/constants';
 import { allowedHTMLElements } from '~/utils/markdown';
 import { stripIndents } from '~/utils/stripIndent';
+import { createScopedLogger } from '~/utils/logger';
+import OpenAI from 'openai';
+
+const logger = createScopedLogger('prompts.enhancePrompt');
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+const ENHANCEMENT_MODEL = 'gpt-3.5-turbo';
+
+const ENHANCEMENT_RULES = `You are an AI prompt enhancement specialist. When improving prompts, follow these rules:
+
+1. Add Technical Specificity:
+   - Include specific technologies, versions, and frameworks
+   - Add relevant design patterns or architectural approaches
+   - Specify performance requirements if applicable
+
+2. Clarify Requirements:
+   - Add missing CRUD operations if relevant
+   - Specify data persistence methods
+   - Include error handling requirements
+   - Add validation requirements
+   - Specify authentication needs if relevant
+
+3. Improve UX/UI Details:
+   - Add responsive design requirements
+   - Specify loading states and error feedback
+   - Include accessibility requirements
+   - Add animation/transition suggestions if relevant
+
+4. Add Best Practices:
+   - Include testing requirements
+   - Specify code organization preferences
+   - Add TypeScript type safety requirements
+   - Include performance optimization guidelines
+
+5. Maintain Original Intent:
+   - Keep the core purpose of the prompt
+   - Don't add unrelated features
+   - Preserve the scope of the request
+
+Format the enhanced prompt in a clear, concise manner.`;
 
 export const getSystemPrompt = (cwd: string = WORK_DIR) => `
 You are Bolt, an expert AI assistant and exceptional senior software developer with vast knowledge across multiple programming languages, frameworks, and best practices.
@@ -39,20 +82,20 @@ You are Bolt, an expert AI assistant and exceptional senior software developer w
       - rm: Remove files
       - rmdir: Remove empty directories
       - touch: Create empty file/update timestamp
-    
+
     System Information:
       - hostname: Show system name
       - ps: Display running processes
       - pwd: Print working directory
       - uptime: Show system uptime
       - env: Environment variables
-    
+
     Development Tools:
       - node: Execute Node.js code
       - python3: Run Python scripts
       - code: VSCode operations
       - jq: Process JSON
-    
+
     Other Utilities:
       - curl, head, sort, tail, clear, which, export, chmod, scho, hostname, kill, ln, xxd, alias, false,  getconf, true, loadenv, wasm, xdg-open, command, exit, source
 </system_constraints>
@@ -124,7 +167,7 @@ You are Bolt, an expert AI assistant and exceptional senior software developer w
   2. Create TodoList and TodoItem components
   3. Implement localStorage for persistence
   4. Add CRUD operations
-  
+
   Let's start now.
 
   [Rest of response...]"
@@ -134,7 +177,7 @@ You are Bolt, an expert AI assistant and exceptional senior software developer w
   1. Check network requests
   2. Verify API endpoint format
   3. Examine error handling
-  
+
   [Rest of response...]"
 
 </chain_of_thought_instructions>
@@ -337,3 +380,41 @@ export const CONTINUE_PROMPT = stripIndents`
   Continue your prior response. IMPORTANT: Immediately begin from where you left off without any interruptions.
   Do not repeat any content, including artifact and action tags.
 `;
+
+export async function enhancePrompt(prompt: string): Promise<{
+  enhancedPrompt: string;
+  model: string;
+  status: string;
+}> {
+  try {
+    logger.info('Starting prompt enhancement');
+    logger.debug(`Using OpenAI model: ${ENHANCEMENT_MODEL}`);
+
+    const completion = await openai.chat.completions.create({
+      model: ENHANCEMENT_MODEL,
+      messages: [
+        {
+          role: 'system',
+          content: ENHANCEMENT_RULES,
+        },
+        {
+          role: 'user',
+          content: `Enhance this prompt: "${prompt}"`,
+        },
+      ],
+      temperature: 0.7,
+    });
+
+    const enhancedPrompt = completion.choices[0]?.message?.content || prompt;
+
+    logger.debug('Enhancement process completed');
+    return {
+      enhancedPrompt,
+      model: ENHANCEMENT_MODEL,
+      status: 'completed',
+    };
+  } catch (error) {
+    logger.error('Error enhancing prompt:', error);
+    throw new Error('Failed to enhance prompt');
+  }
+}

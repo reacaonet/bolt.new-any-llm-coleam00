@@ -1,60 +1,44 @@
-import { type ActionFunctionArgs } from '@remix-run/cloudflare';
-import { StreamingTextResponse, parseStreamPart } from 'ai';
-import { streamText } from '~/lib/.server/llm/stream-text';
-import { stripIndents } from '~/utils/stripIndent';
+import { json } from '@remix-run/node';
+import { z } from 'zod';
+import { enhancePrompt } from '~/lib/.server/llm/prompts';
+import { createScopedLogger } from '~/utils/logger';
 
-const encoder = new TextEncoder();
-const decoder = new TextDecoder();
+const logger = createScopedLogger('api.enhancer');
 
-export async function action(args: ActionFunctionArgs) {
-  return enhancerAction(args);
-}
+const schema = z.object({
+  prompt: z.string(),
+});
 
-async function enhancerAction({ context, request }: ActionFunctionArgs) {
-  const { message } = await request.json<{ message: string }>();
+export const action = async ({ request }: { request: Request }) => {
+  logger.debug('Received enhancement request');
+
+  if (request.method !== 'POST') {
+    logger.warn(`Invalid method: ${request.method}`);
+    return json({ error: 'Method not allowed' }, { status: 405 });
+  }
 
   try {
-    const result = await streamText(
-      [
-        {
-          role: 'user',
-          content: stripIndents`
-          I want you to improve the user prompt that is wrapped in \`<original_prompt>\` tags.
+    const body = await request.json();
+    logger.debug('Parsing request body...');
+    const { prompt } = schema.parse(body);
 
-          IMPORTANT: Only respond with the improved prompt and nothing else!
+    logger.info('Starting prompt enhancement process');
+    const { enhancedPrompt, model, status } = await enhancePrompt(prompt);
 
-          <original_prompt>
-            ${message}
-          </original_prompt>
-        `,
-        },
-      ],
-      context.cloudflare.env,
-    );
-
-    const transformStream = new TransformStream({
-      transform(chunk, controller) {
-        const processedChunk = decoder
-          .decode(chunk)
-          .split('\n')
-          .filter((line) => line !== '')
-          .map(parseStreamPart)
-          .map((part) => part.value)
-          .join('');
-
-        controller.enqueue(encoder.encode(processedChunk));
-      },
+    logger.info(`Enhancement completed using model: ${model}`);
+    return json({
+      enhancedPrompt,
+      model,
+      status,
     });
-
-    const transformedStream = result.toAIStream().pipeThrough(transformStream);
-
-    return new StreamingTextResponse(transformedStream);
   } catch (error) {
-    console.log(error);
-
-    throw new Response(null, {
-      status: 500,
-      statusText: 'Internal Server Error',
-    });
+    logger.error('Error in prompt enhancement:', error);
+    return json(
+      {
+        error: 'Failed to enhance prompt',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 },
+    );
   }
-}
+};
