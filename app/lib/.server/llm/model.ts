@@ -9,6 +9,16 @@ import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { mistral } from '@ai-sdk/mistral';
 import { createMistral } from '@ai-sdk/mistral';
 
+
+export function getNvidiaModel(apiKey: string, model: string) {
+  const openai = createOpenAI({
+    baseURL: 'https://integrate.api.nvidia.com/v1',
+    apiKey,
+  });
+
+  return openai(model);
+}
+
 export function getAnthropicModel(apiKey: string, model: string) {
   const anthropic = createAnthropic({
     apiKey,
@@ -105,6 +115,8 @@ export function getModel(provider: string, model: string, env: Env, apiKeys?: Re
   const baseURL = getBaseURL(env, provider);
 
   switch (provider) {
+    case 'Nvidia':
+      return getNvidiaModel(apiKey, model);
     case 'Anthropic':
       return getAnthropicModel(apiKey, model);
     case 'OpenAI':

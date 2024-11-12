@@ -33,6 +33,8 @@ export function getAPIKey(cloudflareEnv: Env, provider: string, userApiKeys?: Re
       return env.OPENAI_LIKE_API_KEY || cloudflareEnv.OPENAI_LIKE_API_KEY;
     case "xAI":
       return env.XAI_API_KEY || cloudflareEnv.XAI_API_KEY;
+      case 'Nvidia':
+      return env.NVIDIA_API_KEY || cloudflareEnv.NVIDIA_API_KEY;
     default:
       return "";
   }
@@ -40,6 +42,8 @@ export function getAPIKey(cloudflareEnv: Env, provider: string, userApiKeys?: Re
 
 export function getBaseURL(cloudflareEnv: Env, provider: string) {
   switch (provider) {
+    case 'Nvidia':
+      return 'https://integrate.api.nvidia.com/v1';
     case 'OpenAILike':
       return env.OPENAI_LIKE_API_BASE_URL || cloudflareEnv.OPENAI_LIKE_API_BASE_URL;
     case 'LMStudio':
