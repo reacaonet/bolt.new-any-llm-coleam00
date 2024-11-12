@@ -41,6 +41,7 @@ jobs:
       with:
         context: .
         file: ./Dockerfile
+        target: bolt-ai-production  # Specify the production target
         push: true
         tags: |
           ghcr.io/${{ github.repository }}:${{ github.sha }}
