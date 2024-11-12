@@ -471,6 +471,14 @@ export class WorkbenchStore {
       console.error('Error pushing to GitHub:', error instanceof Error ? error.message : String(error));
     }
   }
+
+  addCustomFile: () => void = () => {
+    return;
+  };
+
+  addCustomFolder: () => void = () => {
+    return;
+  };
 }
 
 export const workbenchStore = new WorkbenchStore();
