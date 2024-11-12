@@ -95,6 +95,11 @@ If you can't see the file indicated above, its likely you can't view hidden file
 ```
 defaults write com.apple.finder AppleShowAllFiles YES
 ```
+NOTE: If you don't have the pnpm command installed, you can install pnpm with
+
+```bash
+npm i pnpm --global
+```
 
 **NOTE**: you only have to set the ones you want to use and Ollama doesn't need an API key because it runs locally on your computer:
 
