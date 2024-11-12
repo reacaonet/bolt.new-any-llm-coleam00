@@ -28,6 +28,7 @@ This fork of Bolt.new allows you to choose the LLM that you use for each prompt!
 - ⬜ LM Studio Integration
 - ⬜ Together Integration
 - ⬜ Azure Open AI API Integration
+- ⬜ AWS Bedrock Integration
 - ⬜ HuggingFace Integration
 - ⬜ Perplexity Integration
 - ⬜ Vertex AI Integration
