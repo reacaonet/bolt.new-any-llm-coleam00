@@ -9,6 +9,7 @@ export const DEFAULT_MODEL = 'claude-3-5-sonnet-latest';
 export const DEFAULT_PROVIDER = 'Anthropic';
 
 const staticModels: ModelInfo[] = [
+  { name: 'qwen2.5-coder:32b-32k', label: 'qwen2.5-coder:32b-32k', provider: 'Ollama' },
   { name: 'gpt-4o', label: 'GPT-4o', provider: 'OpenAI' },
   { name: 'anthropic/claude-3.5-sonnet', label: 'Anthropic: Claude 3.5 Sonnet (OpenRouter)', provider: 'OpenRouter' },
   { name: 'anthropic/claude-3-haiku', label: 'Anthropic: Claude 3 Haiku (OpenRouter)', provider: 'OpenRouter' },
