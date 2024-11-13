@@ -28,7 +28,7 @@ export function getAPIKey(cloudflareEnv: Env, provider: string, userApiKeys?: Re
     case 'Deepseek':
       return env.DEEPSEEK_API_KEY || cloudflareEnv.DEEPSEEK_API_KEY
     case 'Mistral':
-      return env.MISTRAL_API_KEY || cloudflareEnv.MISTRAL_API_KEY;        
+      return env.MISTRAL_API_KEY || cloudflareEnv.MISTRAL_API_KEY;
     case "OpenAILike":
       return env.OPENAI_LIKE_API_KEY || cloudflareEnv.OPENAI_LIKE_API_KEY;
     case "xAI":
@@ -51,6 +51,6 @@ export function getBaseURL(cloudflareEnv: Env, provider: string) {
         }
         return baseUrl;
     default:
-      return "";
+      return '';
   }
 }
