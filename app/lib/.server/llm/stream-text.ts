@@ -5,6 +5,7 @@ import { getModel } from '~/lib/.server/llm/model';
 import { MAX_TOKENS } from './constants';
 import { getSystemPrompt } from './prompts';
 import { MODEL_LIST, DEFAULT_MODEL, DEFAULT_PROVIDER, MODEL_REGEX, PROVIDER_REGEX } from '~/utils/constants';
+import tools from './tools';
 
 interface ToolResult<Name extends string, Args, Result> {
   toolCallId: string;
@@ -43,8 +44,8 @@ function extractPropertiesFromMessage(message: Message): { model: string; provid
 }
 
 export function streamText(
-  messages: Messages, 
-  env: Env, 
+  messages: Messages,
+  env: Env,
   options?: StreamingOptions,
   apiKeys?: Record<string, string>
 ) {
@@ -72,6 +73,8 @@ export function streamText(
     system: getSystemPrompt(),
     maxTokens: MAX_TOKENS,
     messages: convertToCoreMessages(processedMessages),
-    ...options,
+    experimental_toolCallStreaming: true,
+    maxSteps: 3,
+    ...options
   });
 }

@@ -13,7 +13,6 @@ import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { Octokit, type RestEndpointMethodTypes } from "@octokit/rest";
 import * as nodePath from 'node:path';
-import type { WebContainerProcess } from '@webcontainer/api';
 
 export interface ArtifactState {
   id: string;
@@ -33,7 +32,6 @@ export class WorkbenchStore {
   #filesStore = new FilesStore(webcontainer);
   #editorStore = new EditorStore(this.#filesStore);
   #terminalStore = new TerminalStore(webcontainer);
-
   artifacts: Artifacts = import.meta.hot?.data.artifacts ?? map({});
 
   showWorkbench: WritableAtom<boolean> = import.meta.hot?.data.showWorkbench ?? atom(false);
@@ -41,7 +39,6 @@ export class WorkbenchStore {
   unsavedFiles: WritableAtom<Set<string>> = import.meta.hot?.data.unsavedFiles ?? atom(new Set<string>());
   modifiedFiles = new Set<string>();
   artifactIdList: string[] = [];
-  #boltTerminal: { terminal: ITerminal; process: WebContainerProcess } | undefined;
 
   constructor() {
     if (import.meta.hot) {
@@ -112,7 +109,9 @@ export class WorkbenchStore {
       }
     }
   }
-
+  updateFile(filePath: string, newContent: string) {
+    this.#editorStore.updateFile(filePath, newContent);
+  }
   setShowWorkbench(show: boolean) {
     this.showWorkbench.set(show);
   }

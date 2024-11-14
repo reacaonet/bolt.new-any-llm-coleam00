@@ -1,4 +1,4 @@
-import type { ModelInfo, OllamaApiResponse, OllamaModel } from './types';
+import type { ModelInfo, OllamaApiResponse, OllamaModel, TemplateInfo } from './types';
 
 export const WORK_DIR_NAME = 'project';
 export const WORK_DIR = `/home/${WORK_DIR_NAME}`;
@@ -37,8 +37,8 @@ const staticModels: ModelInfo[] = [
   { name: 'gpt-4', label: 'GPT-4', provider: 'OpenAI' },
   { name: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo', provider: 'OpenAI' },
   { name: 'grok-beta', label: "xAI Grok Beta", provider: 'xAI' },
-  { name: 'deepseek-coder', label: 'Deepseek-Coder', provider: 'Deepseek'},
-  { name: 'deepseek-chat', label: 'Deepseek-Chat', provider: 'Deepseek'},
+  { name: 'deepseek-coder', label: 'Deepseek-Coder', provider: 'Deepseek' },
+  { name: 'deepseek-chat', label: 'Deepseek-Chat', provider: 'Deepseek' },
   { name: 'open-mistral-7b', label: 'Mistral 7B', provider: 'Mistral' },
   { name: 'open-mixtral-8x7b', label: 'Mistral 8x7B', provider: 'Mistral' },
   { name: 'open-mixtral-8x22b', label: 'Mistral 8x22B', provider: 'Mistral' },
@@ -50,7 +50,12 @@ const staticModels: ModelInfo[] = [
   { name: 'mistral-large-latest', label: 'Mistral Large Latest', provider: 'Mistral' },
 ];
 
+const codeTemplates: TemplateInfo[] = [
+  { name: 'vite-react-ts', label: 'Vite React TS', githubRepo: 'thecodacus/vite-react-ts-template' },
+];
+
 export let MODEL_LIST: ModelInfo[] = [...staticModels];
+export let TEMPLATE_LIST: TemplateInfo[] = [...codeTemplates];
 
 const getOllamaBaseUrl = () => {
   const defaultBaseUrl = import.meta.env.OLLAMA_API_BASE_URL || 'http://localhost:11434';
@@ -128,7 +133,7 @@ async function initializeModelList(): Promise<void> {
   const ollamaModels = await getOllamaModels();
   const openAiLikeModels = await getOpenAILikeModels();
   const lmstudioModels = await getLMStudioModels();
-  MODEL_LIST = [...ollamaModels,...openAiLikeModels, ...staticModels,...lmstudioModels,];
+  MODEL_LIST = [...ollamaModels, ...openAiLikeModels, ...staticModels, ...lmstudioModels,];
 }
 initializeModelList().then();
-export { getOllamaModels,getOpenAILikeModels,getLMStudioModels,initializeModelList };
+export { getOllamaModels, getOpenAILikeModels, getLMStudioModels, initializeModelList };

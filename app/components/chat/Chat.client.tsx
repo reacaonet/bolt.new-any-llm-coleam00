@@ -1,7 +1,5 @@
-// @ts-nocheck
-// Preventing TS checks with files presented in the video for a better presentation.
 import { useStore } from '@nanostores/react';
-import type { Message } from 'ai';
+import type { JSONValue, Message } from 'ai';
 import { useChat } from 'ai/react';
 import { useAnimate } from 'framer-motion';
 import { memo, useEffect, useRef, useState } from 'react';
@@ -16,6 +14,7 @@ import { cubicEasingFn } from '~/utils/easings';
 import { createScopedLogger, renderLogger } from '~/utils/logger';
 import { BaseChat } from './BaseChat';
 import Cookies from 'js-cookie';
+import { toolStore } from '~/lib/stores/tool';
 
 const toastAnimation = cssTransition({
   enter: 'animated fadeInRight',
@@ -85,15 +84,19 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
 
   const { showChat } = useStore(chatStore);
 
+  const toolConfig = useStore(toolStore.config);
+
   const [animationScope, animate] = useAnimate();
 
   const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
 
-  const { messages, isLoading, input, handleInputChange, setInput, stop, append } = useChat({
+  const { messages, isLoading, input, handleInputChange, setInput, stop, append, addToolResult } = useChat({
     api: '/api/chat',
     body: {
-      apiKeys
+      apiKeys,
+      toolEnabled: toolConfig.enabled,
     },
+    maxSteps: 3,
     onError: (error) => {
       logger.error('Request failed\n\n', error);
       toast.error('There was an error processing your request');
@@ -102,8 +105,24 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
       logger.debug('Finished streaming');
     },
     initialMessages,
+    onToolCall: async ({ toolCall }) => {
+      if (toolCall.toolName == 'askForConfirmation') return;
+      logger.debug('Calling Tool:', toolCall);
+      try {
+        let result = await toolStore.handleToolCall({
+          toolName: toolCall.toolName,
+          args: toolCall.args,
+          toolCallId: toolCall.toolCallId,
+        });
+        logger.info('Tool Call Complete', toolCall.toolName, `${result}`.split('---')[0]);
+        return result;
+      } catch (error) {
+        logger.error('Error calling tool:', toolCall.toolName, error);
+        toast.error('There was an error processing your request');
+        return 'Error calling tool';
+      }
+    },
   });
-
   const { enhancingPrompt, promptEnhanced, enhancePrompt, resetEnhancer } = usePromptEnhancer();
   const { parsedMessages, parseMessages } = useMessageParser();
 
@@ -163,7 +182,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
     setChatStarted(true);
   };
 
-  const sendMessage = async (_event: React.UIEvent, messageInput?: string) => {
+  const sendMessage = async (_event: React.UIEvent, messageInput?: string, annotations?: JSONValue[]) => {
     const _input = messageInput || input;
 
     if (_input.length === 0 || isLoading) {
@@ -195,7 +214,11 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
        * manually reset the input and we'd have to manually pass in file attachments. However, those
        * aren't relevant here.
        */
-      append({ role: 'user', content: `[Model: ${model}]\n\n[Provider: ${provider}]\n\n${diff}\n\n${_input}` });
+      append({
+        role: 'user',
+        content: `[Model: ${model}]\n\n[Provider: ${provider}]\n\n${diff}\n\n${_input}`,
+        annotations,
+      });
 
       /**
        * After sending a new message we reset all modifications since the model
@@ -203,7 +226,7 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
        */
       workbenchStore.resetAllFileModifications();
     } else {
-      append({ role: 'user', content: `[Model: ${model}]\n\n[Provider: ${provider}]\n\n${_input}` });
+      append({ role: 'user', content: `[Model: ${model}]\n\n[Provider: ${provider}]\n\n${_input}`, annotations });
     }
 
     setInput('');
@@ -251,6 +274,9 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
       scrollRef={scrollRef}
       handleInputChange={handleInputChange}
       handleStop={abort}
+      addToolResult={addToolResult}
+      toolConfig={toolConfig}
+      onToolConfigChange={(config) => toolStore.setConfig(config)}
       messages={messages.map((message, i) => {
         if (message.role === 'user') {
           return message;
@@ -263,14 +289,14 @@ export const ChatImpl = memo(({ initialMessages, storeMessageHistory }: ChatProp
       })}
       enhancePrompt={() => {
         enhancePrompt(
-          input, 
+          input,
           (input) => {
             setInput(input);
             scrollTextArea();
           },
           model,
           provider,
-          apiKeys
+          apiKeys,
         );
       }}
     />
