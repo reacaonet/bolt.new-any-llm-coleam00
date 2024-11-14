@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import { Dialog, DialogButton, DialogDescription, DialogRoot, DialogTitle } from '~/components/ui/Dialog';
 import { IconButton } from '~/components/ui/IconButton';
 import { ThemeSwitch } from '~/components/ui/ThemeSwitch';
-import { db, deleteById, getAll, chatId, type ChatHistoryItem } from '~/lib/persistence';
+import { db, deleteById, getAll, chatId, type ChatHistoryItem, setMessages } from '~/lib/persistence';
 import { cubicEasingFn } from '~/utils/easings';
 import { logger } from '~/utils/logger';
 import { HistoryItem } from './HistoryItem';
@@ -99,6 +99,114 @@ export function Menu() {
     };
   }, []);
 
+  const exportChatHistory = useCallback(async () => {
+    try {
+      if (!db) {
+        throw new Error('Database not initialized');
+      }
+
+      const history = await getAll(db);
+      const backupData = {
+        version: '1.0',
+        timestamp: new Date().toISOString(),
+        history,
+      };
+
+      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bolt-chat-history-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success('Chat history exported successfully');
+    } catch (error) {
+      logger.error('Failed to export chat history:', error);
+      toast.error('Failed to export chat history');
+    }
+  }, []);
+
+  const importChatHistory = useCallback(async () => {
+    try {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      
+      input.onchange = async (e) => {
+        try {
+          const file = (e.target as HTMLInputElement).files?.[0];
+          if (!file) {
+            throw new Error('No file selected');
+          }
+
+          const reader = new FileReader();
+          reader.onload = async (e) => {
+            try {
+              const content = e.target?.result as string;
+              logger.info('Parsing backup file content:', content.slice(0, 200) + '...');
+              const backupData = JSON.parse(content);
+              
+              // Basic validation with detailed logging
+              logger.info('Validating backup data:', {
+                hasVersion: !!backupData.version,
+                version: backupData.version,
+                hasHistory: !!backupData.history,
+                historyIsArray: Array.isArray(backupData.history),
+                historyLength: backupData.history?.length
+              });
+              
+              if (!backupData.version || !backupData.history || !Array.isArray(backupData.history)) {
+                throw new Error('Invalid backup file format');
+              }
+
+              if (!db) {
+                throw new Error('Database not initialized');
+              }
+
+              // Store each chat history item
+              logger.info('Starting import of chat history items');
+              for (const item of backupData.history) {
+                logger.info('Importing chat item:', { id: item.id, description: item.description });
+                await setMessages(db, item.id, item.messages, item.urlId, item.description);
+              }
+
+              toast.success('Chat history imported successfully');
+              // Reload the page to show imported chats
+              window.location.reload();
+            } catch (error) {
+              logger.error('Failed to process backup file:', error);
+              // More detailed error message
+              if (error instanceof Error) {
+                toast.error(`Failed to process backup file: ${error.message}`);
+              } else {
+                toast.error('Failed to process backup file');
+              }
+            }
+          };
+          reader.readAsText(file);
+        } catch (error) {
+          logger.error('Failed to read backup file:', error);
+          if (error instanceof Error) {
+            toast.error(`Failed to read backup file: ${error.message}`);
+          } else {
+            toast.error('Failed to read backup file');
+          }
+        }
+      };
+
+      input.click();
+    } catch (error) {
+      logger.error('Failed to import chat history:', error);
+      if (error instanceof Error) {
+        toast.error(`Failed to import chat history: ${error.message}`);
+      } else {
+        toast.error('Failed to import chat history');
+      }
+    }
+  }, []);
+
   return (
     <motion.div
       ref={menuRef}
@@ -118,7 +226,27 @@ export function Menu() {
             Start new chat
           </a>
         </div>
-        <div className="text-bolt-elements-textPrimary font-medium pl-6 pr-5 my-2">Your Chats</div>
+        <div className="flex items-center justify-between pl-6 pr-5 my-2">
+          <div className="text-bolt-elements-textPrimary font-medium">Your Chats</div>
+          <div className="flex gap-2">
+            <IconButton
+              title="Import Chat History"
+              onClick={importChatHistory}
+              icon="i-ph-upload-simple-bold"
+              className="text-bolt-elements-textPrimary hover:text-bolt-elements-textTertiary transition-theme"
+              size="xxl"
+              iconClassName="scale-125"
+            />
+            <IconButton
+              title="Export Chat History"
+              onClick={exportChatHistory}
+              icon="i-ph-download-simple-bold"
+              className="text-bolt-elements-textPrimary hover:text-bolt-elements-textTertiary transition-theme"
+              size="xxl"
+              iconClassName="scale-125"
+            />
+          </div>
+        </div>
         <div className="flex-1 overflow-scroll pl-4 pr-5 pb-5">
           {list.length === 0 && <div className="pl-2 text-bolt-elements-textTertiary">No previous conversations</div>}
           <DialogRoot open={dialogContent !== null}>
